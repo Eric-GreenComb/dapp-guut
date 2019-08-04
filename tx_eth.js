@@ -9,7 +9,7 @@ web3.setProvider(new web3.providers.HttpProvider("http://localhost:8540"));
 // 转账
 var _from = "0x762009cd5dcabb5a125008d70f5efdbdff2aa782";
 var _fromPk = "fc3d494d1a1c478e393cf2adf5eb72664b8be9a3ca335e751b504d0b2f429bc3";
-var _to = "0x008b7b778ae54d339df2455a554be8ab46e7553c";
+var _to = "0xcb848cdb40b3728e3ec670157541d8a8f12d7f1f";
 
 //转账数量
 var _value = 5 * Math.pow(10, 18)
@@ -40,7 +40,7 @@ console.log("transaction count of holder is : " + count); // 1
 //私钥
 var _privKey = new Buffer(_fromPk, 'hex');
 
-var _value = "100";
+var _value = "1000";
 var value = web3.toWei(_value, 'ether');
 console.log("toWei", value); // "1000000000000000000"
 //交易信息

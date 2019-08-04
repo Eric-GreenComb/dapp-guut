@@ -22,7 +22,9 @@ solc --bin --abi --overwrite GUUT.sol -o ./
 
 根据返回值，eth_getTransactionReceipt查出 contract address
 
-0xbf18f3937e733e284ce1348f71d94ffda71ba5cb
+0x168f6bbd9dfe8a1ade449e1d8e572c47a07019b29341a45d178eb0205fd66ada
+
+0x43876ea3ae547e3bfd6d4a26cf1319dce68dad31
 
 ## 获取 balance
 

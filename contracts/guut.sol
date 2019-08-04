@@ -153,10 +153,13 @@ contract ERC20 is ERC20Basic {
  * @title Basic token
  * @dev Basic version of StandardToken, with no allowances.
  */
-contract BasicToken is ERC20Basic {
+contract BasicToken is ERC20Basic, Ownable {
   using SafeMath for uint256;
 
   mapping(address => uint256) balances;
+  mapping (address => bool) public frozenAccount;
+
+  event FrozenFunds(address target, bool frozen);  
 
   uint256 totalSupply_;
 
@@ -173,6 +176,7 @@ contract BasicToken is ERC20Basic {
   * @param _value The amount to be transferred.
   */
   function transfer(address _to, uint256 _value) public returns (bool) {
+    require(!frozenAccount[msg.sender]);    
     require(_to != address(0));
     require(_value <= balances[msg.sender]);
 
@@ -189,6 +193,12 @@ contract BasicToken is ERC20Basic {
   */
   function balanceOf(address _owner) public view returns (uint256 balance) {
     return balances[_owner];
+  }
+
+  // freeze account
+  function freezeAccount(address target, bool freeze) public onlyOwner {
+    frozenAccount[target] = freeze;
+    emit FrozenFunds(target, freeze);
   }
 
 }
@@ -291,75 +301,6 @@ contract StandardToken is ERC20, BasicToken {
 
 }
 
-/**
- * 一个可增发的代币。包含增发及结束增发的方法
- * @title Mintable token
- * @dev Simple ERC20 Token example, with mintable token creation
- * @dev Issue: * https://github.com/OpenZeppelin/zeppelin-solidity/issues/120
- */
-contract MintableToken is StandardToken, Ownable {
-  event Mint(address indexed to, uint256 amount);
-  event MintFinished();
-
-  bool public mintingFinished = false;
-
-  modifier canMint() {
-    require(!mintingFinished);
-    _;
-  }
-
-  /**
-   * @dev Function to mint tokens
-   * @param _to The address that will receive the minted tokens.
-   * @param _amount The amount of tokens to mint.
-   * @return A boolean that indicates if the operation was successful.
-   */
-  function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-    totalSupply_ = totalSupply_.add(_amount);
-    balances[_to] = balances[_to].add(_amount);
-    emit Mint(_to, _amount);
-    emit Transfer(address(0), _to, _amount);
-    return true;
-  }
-
-  /**
-   * @dev Function to stop minting new tokens.
-   * @return True if the operation was successful.
-   */
-  function finishMinting() onlyOwner canMint public returns (bool) {
-    mintingFinished = true;
-    emit MintFinished();
-    return true;
-  }
-}
-
-/**
- * 设置增发的上限
- * @title Capped token
- * @dev Mintable token with a token cap.
- */
-contract CappedToken is MintableToken {
-
-  uint256 public cap;
-
-  function CappedToken(uint256 _cap) public {
-    require(_cap > 0);
-    cap = _cap;
-  }
-
-  /**
-   * @dev Function to mint tokens
-   * @param _to The address that will receive the minted tokens.
-   * @param _amount The amount of tokens to mint.
-   * @return A boolean that indicates if the operation was successful.
-   */
-  function mint(address _to, uint256 _amount) onlyOwner canMint public returns (bool) {
-    require(totalSupply_.add(_amount) <= cap);
-
-    return super.mint(_to, _amount);
-  }
-
-}
 
 // 暂停合约会影响以下方法的调用
 contract PausableToken is StandardToken, Pausable {
@@ -429,18 +370,16 @@ contract BurnableToken is BasicToken {
 
 }
 
-contract GUUT is CappedToken, PausableToken, BurnableToken {
+contract GUUT is PausableToken, BurnableToken {
 
     string public constant name = "GUUT";
     string public constant symbol = "GUUT";
     uint8 public constant decimals = 18;
 
-    uint256 private constant TOKEN_CAP = 500000000000 * (10 ** uint256(decimals));
-    uint256 private constant TOKEN_INITIAL = 50000000000 * (10 ** uint256(decimals));
+    uint256 private constant TOKEN_INITIAL = 51000000000 * (10 ** uint256(decimals));
 
-    function GUUT() public CappedToken(TOKEN_CAP) {
+    function GUUT() public {
       totalSupply_ = TOKEN_INITIAL;
-
       balances[msg.sender] = TOKEN_INITIAL;
       emit Transfer(address(0), msg.sender, TOKEN_INITIAL);
 
