@@ -222,6 +222,7 @@ contract StandardToken is ERC20, BasicToken {
    */
   function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     require(_to != address(0));
+    require(!frozenAccount[_from]);       
     require(_value <= balances[_from]);
     require(_value <= allowed[_from][msg.sender]);
 
@@ -244,6 +245,7 @@ contract StandardToken is ERC20, BasicToken {
    * @param _value The amount of tokens to be spent.
    */
   function approve(address _spender, uint256 _value) public returns (bool) {
+    require((_value == 0) || (allowed[msg.sender][_spender] == 0));
     allowed[msg.sender][_spender] = _value;
     emit Approval(msg.sender, _spender, _value);
     return true;
@@ -258,45 +260,6 @@ contract StandardToken is ERC20, BasicToken {
    */
   function allowance(address _owner, address _spender) public view returns (uint256) {
     return allowed[_owner][_spender];
-  }
-
-  /**
-   * 调用者增加spender可操作的代币数量
-   * @dev Increase the amount of tokens that an owner allowed to a spender.
-   *
-   * approve should be called when allowed[_spender] == 0. To increment
-   * allowed value is better to use this function to avoid 2 calls (and wait until
-   * the first transaction is mined)
-   * From MonolithDAO Token.sol
-   * @param _spender The address which will spend the funds.
-   * @param _addedValue The amount of tokens to increase the allowance by.
-   */
-  function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-    allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
-    emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-    return true;
-  }
-
-  /**
-   * 调用者减少spender可操作的代币数量
-   * @dev Decrease the amount of tokens that an owner allowed to a spender.
-   *
-   * approve should be called when allowed[_spender] == 0. To decrement
-   * allowed value is better to use this function to avoid 2 calls (and wait until
-   * the first transaction is mined)
-   * From MonolithDAO Token.sol
-   * @param _spender The address which will spend the funds.
-   * @param _subtractedValue The amount of tokens to decrease the allowance by.
-   */
-  function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
-    uint oldValue = allowed[msg.sender][_spender];
-    if (_subtractedValue > oldValue) {
-      allowed[msg.sender][_spender] = 0;
-    } else {
-      allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
-    }
-    emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-    return true;
   }
 
 }
@@ -317,20 +280,14 @@ contract PausableToken is StandardToken, Pausable {
     return super.approve(_spender, _value);
   }
 
-  function increaseApproval(address _spender, uint _addedValue) public whenNotPaused returns (bool success) {
-    return super.increaseApproval(_spender, _addedValue);
-  }
-
-  function decreaseApproval(address _spender, uint _subtractedValue) public whenNotPaused returns (bool success) {
-    return super.decreaseApproval(_spender, _subtractedValue);
-  }
-
   // 批量转账
   function batchTransfer(address[] _receivers, uint256 _value) public whenNotPaused returns (bool) {
-    uint receiverCount = _receivers.length;
-    uint256 amount = _value.mul(uint256(receiverCount));
+    require(!frozenAccount[msg.sender]);   
 
+    uint receiverCount = _receivers.length;
     require(receiverCount > 0);
+
+    uint256 amount = _value.mul(uint256(receiverCount));
     require(_value > 0 && balances[msg.sender] >= amount);
 
     balances[msg.sender] = balances[msg.sender].sub(amount);
